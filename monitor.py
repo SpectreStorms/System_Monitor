@@ -12,12 +12,36 @@ logging.basicConfig(
 
 
 def main():
+    logging.info(initial_stats)
     while True:
         stats = collect_stats()
         logging.info(stats)
         send_email(stats)
         time.sleep(config.WAIT)
 
+def initial_stats() -> str:
+    """Collects the information used to initialize the log
+    
+    Returns:
+        str: Formatted string with system statistics
+    """
+    # CPU
+    system_information = "\n"    # Stores information logged in system_monitor.log
+    system_information += "CPU\n----------\n"
+    system_information += f'CPU Cores: {psutil.cpu_count(logical=False)}\n'
+    system_information += f'CPU Logical Processors: {psutil.cpu_count()}\n'
+
+    # Memory
+    system_information += "\nMemory\n----------\n"
+    system_information += f"RAM: {convert_bit_to_gb(psutil.virtual_memory().total)} GB\n"
+
+    # Storage
+    system_information += "\nStorage\n----------\n"
+    for disk in psutil.disk_partitions():
+        system_information += f'"{disk.device}: {convert_bit_to_gb(psutil.disk_usage(disk.device).total)} GB\n'
+    system_information += "\n"
+
+    return system_information
 
 def collect_stats() -> str:
     """Collects the system information to be sent in an email
@@ -26,7 +50,7 @@ def collect_stats() -> str:
         str: Formatted string with system statistics
     """
     # CPU
-    system_information = ""    # Stores the contents of the email
+    system_information = "\n"    # Stores the contents of the email
     system_information += "\nCPU\n----------\n"
     system_information += f'CPU Usage: {psutil.cpu_percent(interval=0.1)}%\n'
     for index, logical_processor in enumerate(psutil.cpu_percent(percpu=True, interval=0.1)):
